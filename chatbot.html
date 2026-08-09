@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI hun yawrr</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #070b12;
+      --panel:    #0d1320;
+      --card:     #111827;
+      --border:   #1e2d45;
+      --accent:   #00d4ff;
+      --accent2:  #7b61ff;
+      --green:    #00ffb3;
+      --red:      #ff4d6d;
+      --text:     #d4e3f7;
+      --muted:    #4a6080;
+      --radius:   14px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(7,11,18,0.95);
+      backdrop-filter: blur(12px);
+    }
+
+    .logo-ring {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(0,212,255,0.3);
+      flex-shrink: 0;
+    }
+
+    .header-info h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; color: var(--text); }
+    .header-info p { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); margin-top: 1px; }
+
+    .status-badge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .status-badge:hover { border-color: var(--accent); }
+
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background 0.3s, box-shadow 0.3s; }
+    .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    .dot.error { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    #status-text { color: var(--muted); }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .toolbar label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+
+    .model-select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .model-select:focus { border-color: var(--accent); }
+
+    /* Vision badge */
+    .vision-badge {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0,255,179,0.08);
+      border: 1px solid rgba(0,255,179,0.25);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--green);
+    }
+    .vision-badge.show { display: flex; }
+    .vision-badge span { font-size: 13px; }
+
+    .clear-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 60px 20px;
+      animation: fadeIn 0.5s ease;
+    }
+    .empty-glow { font-size: 48px; filter: drop-shadow(0 0 20px rgba(0,212,255,0.4)); }
+    .empty h2 { font-size: 18px; font-weight: 500; color: var(--text); opacity: 0.6; }
+
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      animation: slideUp 0.25s ease;
+      position: relative;
+    }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    @keyframes slideUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    .av {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .av.bot { background: var(--card); border: 1px solid var(--border); }
+    .av.usr { background: var(--card); border: 1px solid var(--border); }
+
+    .msg-content { display: flex; flex-direction: column; gap: 4px; max-width: 72%; }
+    .msg-row.user .msg-content { align-items: flex-end; }
+
+    .bubble {
+      padding: 13px 17px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.bot {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+      color: var(--text);
+    }
+    .bubble.usr {
+      background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(123,97,255,0.10));
+      border: 1px solid rgba(0,212,255,0.2);
+      border-top-right-radius: 4px;
+      color: var(--text);
+      text-align: right;
+    }
+
+    .bubble img {
+      max-width: 100%;
+      border-radius: 8px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .bubble .file-attach {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+    }
+
+    .msg-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .msg-row:hover .msg-actions { opacity: 1; }
+    .msg-row.user .msg-actions { justify-content: flex-end; }
+
+    .action-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      padding: 3px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.15s;
+    }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.copied { border-color: var(--green); color: var(--green); }
+    .action-btn svg { width: 11px; height: 11px; }
+
+    .edit-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .edit-textarea {
+      background: var(--panel);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      min-height: 60px;
+      outline: none;
+      line-height: 1.55;
+    }
+    .edit-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .edit-save, .edit-cancel {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .edit-save { background: var(--accent); color: #070b12; border-color: var(--accent); font-weight: 700; }
+    .edit-save:hover { opacity: 0.85; }
+    .edit-cancel { background: transparent; color: var(--muted); }
+    .edit-cancel:hover { border-color: var(--red); color: var(--red); }
+
+    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 2px 0; }
+    .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: bounce 1.3s infinite; opacity: 0.5; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity:0.4; } 40% { transform: translateY(-7px); opacity:1; } }
+
+    .toast {
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,77,109,0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      z-index: 100;
+      text-align: center;
+      max-width: 90%;
+    }
+    .toast.show { display: block; animation: fadeIn 0.3s ease; }
+
+    #filePreview {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 28px 0;
+      background: rgba(7,11,18,0.97);
+    }
+    #filePreview.has-files { display: flex; }
+
+    .preview-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      max-width: 200px;
+    }
+    .preview-item img { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; }
+    .preview-item .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px; color: var(--text); }
+    .preview-item .rm {
+      margin-left: auto;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 2px;
+      transition: color 0.15s;
+    }
+    .preview-item .rm:hover { color: var(--red); }
+
+    .input-wrap {
+      padding: 10px 28px 22px;
+      border-top: 1px solid var(--border);
+      background: rgba(7,11,18,0.97);
+    }
+
+    .hint-row {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .textarea-box {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .textarea-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
+
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      resize: none;
+      min-height: 46px;
+      max-height: 130px;
+      line-height: 1.55;
+    }
+    textarea::placeholder { color: var(--muted); }
+
+    .attach-btn {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .attach-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Send button — doubles as Stop button */
+    .send {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .send.send-mode {
+     
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .send.send-mode:hover:not(:disabled) { opacity: 0.85; transform: scale(1.06); box-shadow: 0 0 24px rgba(0,212,255,0.35); }
+    .send.send-mode:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .send.stop-mode {
+      background: rgba(255,77,109,0.15);
+      color: var(--red);
+      border: 1px solid rgba(255,77,109,0.4);
+      font-size: 16px;
+    }
+    .send.stop-mode:hover { background: rgba(255,77,109,0.25); }
+
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-ring">🤖</div>
+    <div class="header-info">
+      <h1>AI hun yawrr</h1>
+      <p>Mera apna AI chatbot</p>
+    </div>
+    <div class="status-badge" onclick="checkOllama()" title="Click to check connection">
+      <div class="dot" id="dot"></div>
+      <span id="status-text">checking...</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <label>Model</label>
+    <select class="model-select" id="modelSelect" onchange="onModelChange()">
+      <option value="llama3.2">llama3.2</option>
+      <option value="llava">llava (vision)</option>
+      <option value="llava:13b">llava:13b (vision)</option>
+      <option value="llava:34b">llava:34b (vision)</option>
+      <option value="llama3">llama3</option>
+      <option value="mistral">mistral</option>
+      <option value="gemma2">gemma2</option>
+      <option value="phi3">phi3</option>
+      <option value="deepseek-r1">deepseek-r1</option>
+      <option value="qwen2.5">qwen2.5</option>
+    </select>
+    <!-- Vision indicator -->
+    <div class="vision-badge" id="visionBadge">
+      <span>👁️</span> vision ON
+    </div>
+    <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+  </div>
+
+  <div id="messages">
+    <div class="empty" id="emptyState">
+      <div class="empty-glow">👑</div>
+      <h2>Welcome Back Boss!!</h2>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div id="filePreview"></div>
+
+  <div class="input-wrap">
+    <div class="hint-row" id="hintRow">Ain't perfect … But still manage things better than you tho</div>
+    <div class="input-row">
+      <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Attach file or image">+</button>
+      <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.json,.py,.js,.ts,.html,.css,.md" onchange="handleFiles(this.files)"/>
+      <div class="textarea-box">
+        <textarea id="input" rows="1" placeholder="Kya pouchny ae ho...?" disabled></textarea>
+      </div>
+      <!-- Single button: send OR stop -->
+      <button class="send send-mode" id="sendBtn" onclick="handleSendStop()" disabled>↑</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const BACKEND_URL = "";  // same origin — served by FastAPI at /app
+  let sessionId = localStorage.getItem("session_id") || "";
+  let history = [];
+  let isLoading = false;
+  let pendingFiles = [];
+  let currentAbortController = null; // for stopping
+
+  // Vision models list
+  const VISION_MODELS = ["llava", "llava:13b", "llava:34b", "bakllava", "moondream", "llava-phi3"];
+
+  function isVisionModel(m) {
+    return VISION_MODELS.some(v => m.startsWith(v));
+  }
+
+  function onModelChange() {
+    const m = document.getElementById("modelSelect").value;
+    const badge = document.getElementById("visionBadge");
+    const hint = document.getElementById("hintRow");
+    if (isVisionModel(m)) {
+      badge.classList.add("show");
+      hint.textContent = "Vision model — images bhi analyze kar sakta hai!";
+    } else {
+      badge.classList.remove("show");
+      hint.textContent = "Ain't perfect … But still manage things better than you tho";
+    }
+  }
+
+  // ── Send / Stop button toggle ──
+  function setSendMode() {
+    const btn = document.getElementById("sendBtn");
+    btn.className = "send send-mode";
+    btn.textContent = "↑";
+    btn.disabled = false;
+  }
+
+  function setStopMode() {
+    const btn = document.getElementById("sendBtn");
+    btn.className = "send stop-mode";
+    btn.textContent = "⏹";
+    btn.disabled = false;
+  }
+
+  function handleSendStop() {
+    if (isLoading) {
+      stopGeneration();
+    } else {
+      sendMessage();
+    }
+  }
+
+  function stopGeneration() {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+  }
+
+  // ── Textarea auto-resize ──
+  const ta = document.getElementById("input");
+  ta.addEventListener("input", () => {
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 130) + "px";
+  });
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendStop(); }
+  });
+
+  // ── Ollama status ──
+  async function checkBackend() {
+    const dot = document.getElementById("dot");
+    const statusText = document.getElementById("status-text");
+    dot.className = "dot";
+    statusText.textContent = "checking...";
+    try {
+      const res = await fetch(BACKEND_URL + "/mode", { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        dot.className = "dot online";
+        statusText.textContent = "online";
+        if (!isLoading) {
+          ta.disabled = false;
+          setSendMode();
+          document.getElementById("sendBtn").disabled = false;
+        }
+        ta.placeholder = "Kya pouchny ae ho..?";
+      } else { throw new Error(); }
+    } catch(e) {
+      if (e.name === "AbortError") return;
+      dot.className = "dot error";
+      statusText.textContent = "So raha hun!";
+      ta.disabled = true;
+      document.getElementById("sendBtn").disabled = true;
+      ta.placeholder = "Backend se connect nahi ho raha...";
+    }
+  }
+  checkBackend();
+  setInterval(checkBackend, 5000);
+
+  // ── Toast ──
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show";
+    setTimeout(() => { t.className = "toast"; }, 4000);
+  }
+
+  // ── Clear chat ──
+  function clearChat() {
+    if (isLoading) stopGeneration();
+    history = [];
+    pendingFiles = [];
+    renderFilePreviews();
+    const msgs = document.getElementById("messages");
+    msgs.innerHTML = `<div class="empty" id="emptyState"><div class="empty-glow">⚡</div><h2>Welcome boss!!</h2></div>`;
+  }
+
+  // ── File handling ──
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        pendingFiles.push({ file, dataUrl: e.target.result, type: file.type });
+        renderFilePreviews();
+        // Auto hint if non-vision model selected
+        const m = document.getElementById("modelSelect").value;
+        if (file.type.startsWith("image/") && !isVisionModel(m)) {
+          showToast("Image analysis ke liye LLaVA model select karo!");
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById("fileInput").value = "";
+  }
+
+  function renderFilePreviews() {
+    const wrap = document.getElementById("filePreview");
+    wrap.innerHTML = "";
+    if (pendingFiles.length === 0) { wrap.classList.remove("has-files"); return; }
+    wrap.classList.add("has-files");
+    pendingFiles.forEach((pf, i) => {
+      const div = document.createElement("div");
+      div.className = "preview-item";
+      if (pf.type.startsWith("image/")) {
+        div.innerHTML = `<img src="${pf.dataUrl}" alt="preview"><span class="fname">${escapeHtml(pf.file.name)}</span><span class="rm" onclick="removeFile(${i})">✕</span>`;
+      } else {
+        div.innerHTML = `<span>📄</span><span class="fname">${escapeHtml(pf.file.name)}</span><span class="rm" onclick="removeFile(${i})">✕</span>`;
+      }
+      wrap.appendChild(div);
+    });
+  }
+
+  function removeFile(i) {
+    pendingFiles.splice(i, 1);
+    renderFilePreviews();
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // ── Copy button ──
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add("copied");
+      btn.innerHTML = svgCheck() + " Copied";
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        btn.innerHTML = svgCopy() + " Copy";
+      }, 2000);
+    }).catch(() => showToast("Copy nahi hua yawrr!"));
+  }
+
+  function svgCopy() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  }
+  function svgCheck() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
+  function svgEdit() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  }
+
+  // ── Append message ──
+  function appendMsg(role, content, attachments) {
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+
+    const msgs = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = `msg-row ${role === "user" ? "user" : ""}`;
+    row.dataset.role = role;
+
+    const av = document.createElement("div");
+    av.className = `av ${role === "user" ? "usr" : "bot"}`;
+    av.textContent = role === "user" ? "🧝‍♀️" : "🤖";
+
+    const msgContent = document.createElement("div");
+    msgContent.className = "msg-content";
+
+    const bubble = document.createElement("div");
+    bubble.className = `bubble ${role === "user" ? "usr" : "bot"}`;
+    bubble.dataset.text = content;
+
+    if (attachments && attachments.length > 0) {
+      attachments.forEach(att => {
+        if (att.type.startsWith("image/")) {
+          const img = document.createElement("img");
+          img.src = att.dataUrl;
+          img.alt = att.file.name;
+          bubble.appendChild(img);
+        } else {
+          const fd = document.createElement("div");
+          fd.className = "file-attach";
+          fd.textContent = "📄 " + att.file.name;
+          bubble.appendChild(fd);
+        }
+      });
+    }
+
+    if (content) {
+      const txt = document.createElement("span");
+      txt.textContent = content;
+      bubble.appendChild(txt);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "msg-actions";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "action-btn";
+    copyBtn.innerHTML = svgCopy() + " Copy";
+    copyBtn.onclick = () => copyText(bubble.dataset.text || content, copyBtn);
+    actions.appendChild(copyBtn);
+
+    if (role === "user") {
+      const editBtn = document.createElement("button");
+      editBtn.className = "action-btn";
+      editBtn.innerHTML = svgEdit() + " Edit";
+      editBtn.onclick = () => startEdit(row, bubble, actions, content);
+      actions.appendChild(editBtn);
+    }
+
+    msgContent.appendChild(bubble);
+    msgContent.appendChild(actions);
+    row.appendChild(av);
+    row.appendChild(msgContent);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+    return row;
+  }
+
+  // ── Edit message ──
+  function startEdit(row, bubble, actions, originalText) {
+    bubble.style.display = "none";
+    actions.style.display = "none";
+
+    const editWrap = document.createElement("div");
+    editWrap.className = "edit-wrap";
+
+    const editArea = document.createElement("textarea");
+    editArea.className = "edit-textarea";
+    editArea.value = originalText;
+
+    const editActions = document.createElement("div");
+    editActions.className = "edit-actions";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "edit-save";
+    saveBtn.textContent = "Send";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "edit-cancel";
+    cancelBtn.textContent = "Cancel";
+
+    cancelBtn.onclick = () => {
+      editWrap.remove();
+      bubble.style.display = "";
+      actions.style.display = "";
+    };
+
+    saveBtn.onclick = () => {
+      const newText = editArea.value.trim();
+      if (!newText) return;
+      editWrap.remove();
+
+      const msgs = document.getElementById("messages");
+      const rows = Array.from(msgs.querySelectorAll(".msg-row"));
+      const idx = rows.indexOf(row);
+
+      for (let i = rows.length - 1; i >= idx; i--) rows[i].remove();
+      history = history.slice(0, idx);
+
+      appendMsg("user", newText);
+      history.push({ role: "user", content: newText });
+      sendToOllama(newText, []);
+    };
+
+    editActions.appendChild(cancelBtn);
+    editActions.appendChild(saveBtn);
+    editWrap.appendChild(editArea);
+    editWrap.appendChild(editActions);
+
+    const msgContent = row.querySelector(".msg-content");
+    msgContent.appendChild(editWrap);
+
+    editArea.focus();
+    editArea.style.height = "auto";
+    editArea.style.height = Math.min(editArea.scrollHeight, 200) + "px";
+  }
+
+  // ── Typing indicator ──
+  function showTyping() {
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+    const msgs = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = "msg-row";
+    row.id = "typingRow";
+    row.innerHTML = `<div class="av bot">🤖</div><div class="msg-content"><div class="bubble bot"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>`;
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById("typingRow");
+    if (t) t.remove();
+  }
+
+  function readFileAsText(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsText(file);
+    });
+  }
+
+  // ── Send message ──
+  async function sendMessage() {
+    if (isLoading) return;
+    const text = ta.value.trim();
+    const files = [...pendingFiles];
+    if (!text && files.length === 0) return;
+
+    isLoading = true;
+    ta.value = "";
+    ta.style.height = "auto";
+    setStopMode(); // switch button to STOP
+
+    const displayText = text || "";
+    appendMsg("user", displayText, files);
+
+    // Build Ollama message content
+    const model = document.getElementById("modelSelect").value;
+    const visionMode = isVisionModel(model);
+
+    // Separate images and text files
+    const imageFiles = files.filter(pf => pf.type.startsWith("image/"));
+    const textFiles = files.filter(pf => !pf.type.startsWith("image/"));
+
+    let historyContent = displayText;
+
+    // For text files, append content as text
+    for (const pf of textFiles) {
+      try {
+        const fc = await readFileAsText(pf.file);
+        historyContent += `\n\n[File: ${pf.file.name}]\n${fc}`;
+      } catch {}
+    }
+
+    // Build the user message for Ollama
+    let userMessage;
+    if (visionMode && imageFiles.length > 0) {
+      // LLaVA supports images — send as base64 array in "images" field
+      const imageBase64List = imageFiles.map(pf => {
+        // dataUrl format: "data:image/jpeg;base64,XXXX" — strip prefix
+        return pf.dataUrl.split(",")[1];
+      });
+      userMessage = {
+        role: "user",
+        content: historyContent || "Image ka analyze karo",
+        images: imageBase64List
+      };
+    } else {
+      if (imageFiles.length > 0 && !visionMode) {
+        historyContent += "\n\n[Image k liye llava lgao bro!]";
+      }
+      userMessage = {
+        role: "user",
+        content: historyContent || "[File attached]"
+      };
+    }
+
+    history.push(userMessage);
+    pendingFiles = [];
+    renderFilePreviews();
+
+    await sendToOllama(text, files);
+  }
+
+  async function sendToOllama(text, files) {
+    showTyping();
+
+    currentAbortController = new AbortController();
+
+    try {
+      const res = await fetch(BACKEND_URL + "/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: currentAbortController.signal,
+        body: JSON.stringify({
+          message: text,
+          session_id: sessionId
+        })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      if (data.session_id) {
+        sessionId = data.session_id;
+        localStorage.setItem("session_id", sessionId);
+      }
+      const fullReply = data.response || "";
+
+      removeTyping();
+
+      const msgs = document.getElementById("messages");
+      const row = document.createElement("div");
+      row.className = "msg-row";
+      row.dataset.role = "assistant";
+
+      const av = document.createElement("div");
+      av.className = "av bot";
+      av.textContent = "🤖";
+
+      const msgContent = document.createElement("div");
+      msgContent.className = "msg-content";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble bot";
+      bubble.textContent = fullReply;
+      bubble.dataset.text = fullReply;
+
+      const actions = document.createElement("div");
+      actions.className = "msg-actions";
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "action-btn";
+      copyBtn.innerHTML = svgCopy() + " Copy";
+      actions.appendChild(copyBtn);
+
+      msgContent.appendChild(bubble);
+      msgContent.appendChild(actions);
+      row.appendChild(av);
+      row.appendChild(msgContent);
+      msgs.appendChild(row);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      history.push({ role: "assistant", content: fullReply });
+      copyBtn.onclick = () => copyText(fullReply, copyBtn);
+
+    } catch (err) {
+      removeTyping();
+      if (err.name !== "AbortError") {
+        showToast("Error: " + err.message);
+      }
+    }
+
+    isLoading = false;
+    currentAbortController = null;
+    setSendMode(); // switch back to send
+    ta.focus();
+  }
+</script>
+</body>
+</html>
